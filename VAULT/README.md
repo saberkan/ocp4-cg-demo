@@ -2,10 +2,14 @@
 # Installation
 #############################
 # Installation de Vault
+<pre>
 oc new-project hashicorp-vault
+</pre>
 
 # Donner les droits admin au service account
+<pre>
 oc adm policy add-scc-to-user privileged -z default
+</pre>
 
 # Configuration vault en configmap
 <pre>
@@ -29,8 +33,8 @@ cat <<EOF > vault-config.json
   }
 }
 EOF
-</pre>
 oc create configmap vault-config --from-file=vault-config=./vault-config.json
+</pre>
 
 # Création Vault instance
 <pre>
@@ -118,15 +122,20 @@ spec:
     requests:
       storage: 1Gi
 EOF
-</pre>
 oc create -f vault.yaml
+</pre>
 
 # Expose route vault
+<pre>
 oc create route reencrypt vault --port=8200 --service=vault
+</pre>
 
 # Get route
+<pre>
+</pre>
 
 # Créer root token vault
+<pre>
 vault operator init -tls-skip-verify -key-shares=1 -key-threshold=1
 Unseal Key 1: /freZZBd6yDqMVLpT9qBwQ7pknOv0E9KjgTe83yjfX4=
 Initial Root Token: H6YoC2sPBZc16V5KG2VOd0O6
@@ -134,63 +143,83 @@ Initial Root Token: H6YoC2sPBZc16V5KG2VOd0O6
 export KEYS=/freZZBd6yDqMVLpT9qBwQ7pknOv0E9KjgTe83yjfX4=
 export ROOT_TOKEN=H6YoC2sPBZc16V5KG2VOd0O6
 export VAULT_TOKEN=$ROOT_TOKEN
+</pre>
 
 
 # Create service account pour communiqer avec kube
+<pre>
 oc create sa vault-auth
 oc adm policy add-cluster-role-to-user system:auth-delegator system:serviceaccount:hashicorp-vault:vault-auth
+</pre>
 
 # Recupération token service account, et CA vault
+<pre>
 reviewer_service_account_jwt=$(oc serviceaccounts get-token vault-auth)
 pod=$(oc get pods -lapp=vault --no-headers -o custom-columns=NAME:.metadata.name)
 oc exec $pod -- cat /var/run/secrets/kubernetes.io/serviceaccount/ca.crt > /tmp/ca.crt
+</pre>
 
 # Activer le plugin kubernetes
+<pre>
 vault auth enable -tls-skip-verify kubernetes
+</pre>
 
 # Ajouter le service account vault-auth sur vault pour communiquer avec kube
+<pre>
 export OPENSHIFT_HOST=https://api.cluster-mpl-d015.mpl-d015.example.opentlc.com:6443
 vault write -tls-skip-verify auth/kubernetes/config token_reviewer_jwt=$reviewer_service_account_jwt kubernetes_host=$OPENSHIFT_HOST kubernetes_ca_cert=@/tmp/ca.crt
+</pre>
 
 #############################
 # DECLARATION DES ROUSOURCES
 #############################
 # Ecrire une policy pour un secret
+<pre>
 cat <<EOF > policy-monsecret.hcl
 path "secret/monsecret" {
   capabilities = ["read", "list"]
 }
 EOF
 vault policy write -tls-skip-verify policy-monsecret policy-monsecret.hcl
+</pre>
 
 # Ecrire mon secret
+<pre>
 vault write -tls-skip-verify secret/monsecret password=SECURE
+</pre>
 
 # Donner acces à monsecret par les pods du namespace monnamespace pendant 2h
+<pre>
 vault write -tls-skip-verify auth/kubernetes/role/monrole-monnamespace-monsecret \
     bound_service_account_names=default bound_service_account_namespaces='monnamespace' \
     policies=policy-monsecret \
     ttl=2h
+</pre>
 
 # Lire mon secret  en tant que root
+<pre>
 vault read -tls-skip-verify secret/monsecret
+</pre>
 
 #############################
 # Utilisation
 #############################
 # Lire mon secret en tant que user du namespace monnamespace, Création namespace, recupération token default, connexion
+<pre>
 oc new-project monnamespace
 default_account_token=$(oc sa get-token default -n monnamespace)
 vault write -tls-skip-verify auth/kubernetes/login role=monrole-monnamespace-monsecret jwt=${default_account_token}
 export VAULT_TOKEN=w39Pt4QG5NljuduCwZFYDIEU
 vault read -tls-skip-verify secret/monsecret
-
+</pre>
 
 #############################
 # Utilisation avec openshift
 #############################
 # Deployer une application exemple
+<pre>
 oc new-app centos/ruby-25-centos7~https://github.com/sclorg/ruby-ex.git
+</pre>
 
 # Editer le deployment config pour charger les secrets au démarrage avec un init container
 <pre>
