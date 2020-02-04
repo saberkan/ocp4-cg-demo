@@ -8,6 +8,7 @@ oc new-project hashicorp-vault
 oc adm policy add-scc-to-user privileged -z default
 
 # Configuration vault en configmap
+<pre>
 cat <<EOF > vault-config.json
 {
   "backend": {
@@ -28,9 +29,11 @@ cat <<EOF > vault-config.json
   }
 }
 EOF
+</pre>
 oc create configmap vault-config --from-file=vault-config=./vault-config.json
 
 # Création Vault instance
+<pre>
 cat <<EOF > vault.yaml
 apiVersion: v1
 kind: Service
@@ -115,6 +118,7 @@ spec:
     requests:
       storage: 1Gi
 EOF
+</pre>
 oc create -f vault.yaml
 
 # Expose route vault
@@ -189,6 +193,7 @@ vault read -tls-skip-verify secret/monsecret
 oc new-app centos/ruby-25-centos7~https://github.com/sclorg/ruby-ex.git
 
 # Editer le deployment config pour charger les secrets au démarrage avec un init container
+<pre>
     spec:
       volumes:
       - name: app-secrets
@@ -213,9 +218,11 @@ oc new-app centos/ruby-25-centos7~https://github.com/sclorg/ruby-ex.git
           mountPath: /etc/app
         - name: vault-token
           mountPath: /etc/vault
-
+</pre>
+<pre>
 # Ajouter le volume partagé sur le main container 
         volumeMounts:
         - name: app-secrets
           mountPath: /etc/app
+</pre>
 
