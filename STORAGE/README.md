@@ -75,12 +75,7 @@ oc get dc/myapp -o yaml
 
 ## Automatique: Avec storage class sur AWS
 <pre>
-# Exemplse block storage class aws
-
-</pre>
-
 # Montage des volumes dans le pod à travers dc
-<pre>
 apiVersion: storage.k8s.io/v1
 kind: StorageClass
 metadata:
