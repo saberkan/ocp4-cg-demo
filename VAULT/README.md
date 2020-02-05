@@ -132,24 +132,30 @@ oc create route reencrypt vault --port=8200 --service=vault
 
 # Get route
 <pre>
+oc get route
+export VAULT_ADDR=https://vault-hashicorp-vault-2.apps.cluster-mpl-d015.mpl-d015.example.opentlc.com
 </pre>
 
 # Créer root token vault
 <pre>
 vault operator init -tls-skip-verify -key-shares=1 -key-threshold=1
-Unseal Key 1: /freZZBd6yDqMVLpT9qBwQ7pknOv0E9KjgTe83yjfX4=
-Initial Root Token: H6YoC2sPBZc16V5KG2VOd0O6
+Unseal Key 1: O36nl8nY9A5jNqx1XsTni2VxV9kyn/vq5z4IUNgDxh8=
 
-export KEYS=/freZZBd6yDqMVLpT9qBwQ7pknOv0E9KjgTe83yjfX4=
-export ROOT_TOKEN=H6YoC2sPBZc16V5KG2VOd0O6
+Initial Root Token: 5YDgYBxfWsN3VaHZ0G464ure
+
+
+export KEYS=O36nl8nY9A5jNqx1XsTni2VxV9kyn/vq5z4IUNgDxh8=
+export ROOT_TOKEN=5YDgYBxfWsN3VaHZ0G464ure
 export VAULT_TOKEN=$ROOT_TOKEN
+
+vault operator unseal -tls-skip-verify $KEYS
 </pre>
 
 
 # Create service account pour communiqer avec kube
 <pre>
 oc create sa vault-auth
-oc adm policy add-cluster-role-to-user system:auth-delegator system:serviceaccount:hashicorp-vault:vault-auth
+oc adm policy add-cluster-role-to-user system:auth-delegator system:serviceaccount:hashicorp-vault-2:vault-auth
 </pre>
 
 # Recupération token service account, et CA vault
@@ -191,7 +197,7 @@ vault write -tls-skip-verify secret/monsecret password=SECURE
 # Donner acces à monsecret par les pods du namespace monnamespace pendant 2h
 <pre>
 vault write -tls-skip-verify auth/kubernetes/role/monrole-monnamespace-monsecret \
-    bound_service_account_names=default bound_service_account_namespaces='monnamespace' \
+    bound_service_account_names=default bound_service_account_namespaces='cg-demo-0402' \
     policies=policy-monsecret \
     ttl=2h
 </pre>
@@ -207,7 +213,7 @@ vault read -tls-skip-verify secret/monsecret
 # Lire mon secret en tant que user du namespace monnamespace, Création namespace, recupération token default, connexion
 <pre>
 oc new-project monnamespace
-default_account_token=$(oc sa get-token default -n monnamespace)
+default_account_token=$(oc sa get-token default -n cg-demo-0402)
 vault write -tls-skip-verify auth/kubernetes/login role=monrole-monnamespace-monsecret jwt=${default_account_token}
 export VAULT_TOKEN=w39Pt4QG5NljuduCwZFYDIEU
 vault read -tls-skip-verify secret/monsecret
@@ -240,8 +246,6 @@ oc new-app centos/ruby-25-centos7~https://github.com/sclorg/ruby-ex.git
             curl -k --request POST --data '{"jwt": "'"$OCP_TOKEN"'", "role": "monrole-monnamespace-monsecret"}' https://vault-hashicorp-vault.apps.cluster-mpl-d015.mpl-d015.example.opentlc.com/v1/auth/kubernetes/login | jq -j '.auth.client_token' > /etc/vault/token;
             X_VAULT_TOKEN=$(cat /etc/vault/token);
             curl -k --header "X-Vault-Token: $X_VAULT_TOKEN" https://vault-hashicorp-vault.apps.cluster-mpl-d015.mpl-d015.example.opentlc.com/v1/secret/monsecret > /etc/app/monsecret;
-            # exemple utiliser jq pour recuperer le secret dans un fichier
-            # echo "spring.data.mongodb.uri=mongodb://$(jq -j '.data.user' /etc/app/creds.json):$(jq -j '.data.password' /etc/app/creds.json)@mongodb/sampledb" > /etc/app/application.properties;
         volumeMounts:
         - name: app-secrets
           mountPath: /etc/app
