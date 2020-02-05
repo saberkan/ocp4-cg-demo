@@ -7,7 +7,7 @@
        memory: "256Mi"
        ephemeral-storage: "1Gi"
      limits:
-	   cpu: "100m" 
+	     cpu: "100m" 
        memory: "256Mi" 
        ephemeral-storage: "1Gi" 
 </pre>

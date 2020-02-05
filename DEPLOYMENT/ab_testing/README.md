@@ -4,7 +4,7 @@ Forker sous : https://github.com/saberkan/ruby-ex.git
 
 # Cloner le projet
 <pre>
-git clone https://github.com/sclorg/ruby-ex.git
+git clone https://github.com/saberkan/ruby-ex.git
 cd ruby-ex
 </pre>
 
