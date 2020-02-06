@@ -23,6 +23,9 @@ export ETCDCTL_API=3 ETCDCTL_CACERT=/etc/ssl/etcd/ca.crt ETCDCTL_CERT=$(find /et
 
 # Lister le memberes
 etcdctl member list -w table
+
+# Exemple lecture object dans etcd
+etcdctl get --prefix=true /kubernetes.io/apiextensions.k8s.io/customresourcedefinitions/alertmanagers.monitoring.coreos.com
 </pre>
 
 # Ajouter le nouveau master au cluster
