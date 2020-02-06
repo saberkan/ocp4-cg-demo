@@ -1,19 +1,5 @@
 Source: https://docs.openshift.com/container-platform/4.3/storage/understanding-persistent-storage.html
-
-# Petit rappel, type de stockage
-## Objet comme S3
-## Block comme les disks azure
-## file systeme comme NFS SMB etc
-## LE PV est une notion cluster wide, PVC c'est le "bound" d'un PV dans un namespace. 
-## un PV bounded par PVC, ne peut etre utilisé que dans le namespace en question
-
-# La notion de storage class peut se présenter comme ceci
-<pre>
-Founrisseur de stockage <-> API <-> Storage class (sc A)
-   |
-   |
-   PV (sc A) <-> PVC (sc A) <-> NODE <-> POD (dc, etcd)
-</pre>
+Source: https://kubernetes.io/docs/concepts/storage/storage-classes/#azure-file
 
 # Les modes d'acces
 Les modes d'accées sont propre au options disponibles par la technologie et type du stockage
