@@ -1,0 +1,8 @@
+FROM registry.access.redhat.com/ubi7/ubi
+
+RUN yum install -y httpd; yum clean all
+RUN echo "Hello CAP" > /var/www/html/index.html
+
+EXPOSE 80
+CMD /usr/sbin/httpd -X
+
