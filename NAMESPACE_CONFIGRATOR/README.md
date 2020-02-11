@@ -30,3 +30,45 @@ spec:
 </pre>
 
 ## Creation de network policy multitenant
+<pre>
+apiVersion: redhatcop.redhat.io/v1alpha1
+kind: NamespaceConfig
+metadata:
+  name: multitenant
+  namespace: namespace-configurator
+spec:
+  resources:
+    - apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: deny-by-default
+      spec:
+        podSelector: {}
+        policyTypes:
+          - Ingress
+    - apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: allow-same-namespace
+      spec:
+        ingress:
+          - from:
+              - podSelector: {}
+        podSelector: null
+        policyTypes:
+          - Ingress
+    - apiVersion: networking.k8s.io/v1
+      kind: NetworkPolicy
+      metadata:
+        name: allow-openshift-ingress
+      spec:
+        ingress:
+          - from:
+              - namespaceSelector:
+                  matchLabels:
+                    network.openshift.io/policy-group: ingress
+        podSelector: {}
+  selector:
+    matchLabels:
+      multitenant: 'true'
+</pre>
