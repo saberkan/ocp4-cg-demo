@@ -3,6 +3,9 @@ https://istio.io/docs/tasks/traffic-management/
 Livre d'intro (sur ocp3) :
 Introducing istio service mesh par Christian Posta & Burr Sutter
 
+Des labs demo:
+https://learn.openshift.com/servicemesh?extIdCarryOver=true&intcmp=7013a000002CtetAAC&sc_cid=701f2000001Css5AAC
+
 # Evolution services micro (Théorie)
 Low risk monolith to micro service process
 <pre>

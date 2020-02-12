@@ -177,12 +177,14 @@ Templates/_helpers.tpl : des traitement supplémentaires pour éditer des objets
     app: {{ .Values.nameOverride }}
 </pre>
 
+# Editer values.yaml
+
 ## Les mettre dans la chart
 <pre>
 # Nettoyer le reste la charte
 rm ruby-ex/templates/{deployment,ingress,serviceaccount,service}.yaml
 rm ruby-ex/templates/NOTES.txt
-mv dc.yaml ruby-ex/templates/                                                                                         
+mv dc.yaml ruby-ex/templates/                                                                                  
 mv svc.yaml ruby-ex/templates/
 mv route.yaml ruby-ex/templates/ 
 </pre>
@@ -191,7 +193,7 @@ mv route.yaml ruby-ex/templates/
 <pre>
 oc new-project saberkan-test-helm-1
 helm template ruby-saberkan-1 ./ruby-ex --set service.port=8080
-helm install ./ruby-ex --set service.internalPort=8080
+helm install ruby-ex ./ruby-ex --set service.port=8080
 </pre>
 
 ## Check installed
@@ -202,9 +204,15 @@ helm delete ruby-saberkan-1
 helm install ruby-saberkan-1 ./ruby-ex --set service.port=8080
 </pre>
 
+## Archive my chart
+<pre>
+helm package ruby-ex
+
+</pre>
+
 ## Use repository
 <pre>
-https://helm.sh/docs/topics/chart_repository/
+https://helm.sh/docs/topics/chart_repository/touche 
 # Create git repo helm-charts
 mkdir helm-charts && cd helm-charts
 echo "# helm-charts" >> README.md
