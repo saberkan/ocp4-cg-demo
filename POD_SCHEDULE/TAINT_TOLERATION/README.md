@@ -30,6 +30,9 @@ spec:
 ## Mettre la tolération au niveau de l'application pour deployer tout au niveau du node
 <pre>
 dans le dc
+spec:
+  template:
+    spec:
 ...
 tolerations:
  - key: "montag"

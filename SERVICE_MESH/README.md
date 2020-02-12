@@ -390,30 +390,137 @@ sleep .1
 done
 </pre>
 
-# Circuit breaker //TODO
+# Fault injection
+<pre>
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: catalog
+spec:
+  hosts:
+  - catalog
+  http:
+  - fault:
+      abort:
+        httpStatus: 503
+        percent: 50
+    route:
+    - destination:
+        host: catalog
+        subset: version-v2
+</pre>
+
+# Timeout
+<per>
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: catalog
+spec:
+  hosts:
+  - catalog
+  http:
+  - fault:
+      delay:
+        fixedDelay: 7.000s
+        percent: 50
+    route:
+    - destination:
+        host: catalog
+        subset: version-v2
+</per>
+
+# Retry
+<pre>
+apiVersion: networking.istio.io/v1alpha3
+kind: VirtualService
+metadata:
+  name: catalog
+spec:
+  hosts:
+  - catalog
+  http:
+  - route:
+    - destination:
+        host: catalog
+        subset: version-v2
+    retries:
+      attempts: 3
+      perTryTimeout: 2s
+</pre>
+
+# Circuit breaker
 Fails uand on depasse une requete en parallere http1MaxPendingRequests: 1, maxRequestsPerConnection: 1
 <pre>
 cat <<EOF > circuit-breaker.yaml
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
-  name: circuit-breaker
+  name: catalog
 spec:
   host: catalog
-  trafficPolicy:
-    connectionPool:
-      http:
-        http1MaxPendingRequests: 1
-        maxRequestsPerConnection: 1
-      tcp:
-        maxConnections: 1
-    outlierDetection:
-      baseEjectionTime: 180.000s
-      consecutiveErrors: 1
-      interval: 1.000s
-      maxEjectionPercent: 100
+  subsets:
+    - name: version-v1
+      labels:
+        version: v1
+    - name: version-v2
+      labels:
+        version: v2
+      trafficPolicy:
+        connectionPool:
+          http:
+            http1MaxPendingRequests: 1
+            maxRequestsPerConnection: 1
+          tcp:
+            maxConnections: 1
+        outlierDetection:
+          baseEjectionTime: 120.000s
+          consecutiveErrors: 1
+          interval: 1.000s
+          maxEjectionPercent: 100
 EOF
 oc create -f circuit-breaker.yaml -n $OCP_TUTORIAL_PROJECT
+
+siege -r 2 -c 20 -v <route du catalog>
+</pre>
+
+# Pool ejection
+<pre>
+apiVersion: networking.istio.io/v1alpha3
+kind: DestinationRule
+metadata:
+  name: catalog
+spec:
+  host: catalog
+  subsets:
+  - labels:
+      version: v1
+    name: version-v1
+    trafficPolicy:
+      connectionPool:
+        http: {}
+        tcp: {}
+      loadBalancer:
+        simple: RANDOM
+      outlierDetection:
+        baseEjectionTime: 15.000s
+        consecutiveErrors: 1
+        interval: 5.000s
+        maxEjectionPercent: 100
+  - labels:
+      version: v2
+    name: version-v2
+    trafficPolicy:
+      connectionPool:
+        http: {}
+        tcp: {}
+      loadBalancer:
+        simple: RANDOM
+      outlierDetection:
+        baseEjectionTime: 15.000s
+        consecutiveErrors: 1
+        interval: 5.000s
+        maxEjectionPercent: 100
 </pre>
 
 # D'autre stratégies de redirection peuvent etre retrouvés dans la documentation officielle de istio

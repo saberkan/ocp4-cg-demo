@@ -17,7 +17,7 @@ oc get nodes -l node-role.kubernetes.io/worker
 ## Creation des resources
 <pre>
 oc new-project scheduling
-oc new-app openshift/hello-openshift:v3.10 --name=app-zone1 -n scheduling
+oc new-app openshift/hello-openshift:v3.10 --name=app-zone-a -n scheduling
 </pre>
 
 ## Vérifier ou tourne les pods

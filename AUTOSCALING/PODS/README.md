@@ -49,11 +49,16 @@ spec:
     apiVersion: apps.openshift.io/v1
     kind: DeploymentConfig 
     name: cache  
-  targetCPUUtilizationPercentage: 50 
+  targetCPUUtilizationPercentage: 40
 
  # Voir les events
+
+ # Requete sur le pod
 </pre>
 
 
 # Pour aller plus loin
 https://docs.openshift.com/container-platform/4.3/monitoring/exposing-custom-application-metrics-for-autoscaling.html
+
+# Hors sujet culture générale, VM sur kube
+https://github.com/kubevirt/kubevirt
