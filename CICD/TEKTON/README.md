@@ -253,7 +253,7 @@ spec:
       - build
     params:
     - name: ARGS
-      value: "rollout latest spring-petclinic"
+      value: ["rollout latest spring-petclinic"]
 /!\ Attention cet argument ne passe pas, attendu sous format d'array par la task
 à changer par ["rollout", ...]
 </pre>

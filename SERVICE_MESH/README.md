@@ -6,6 +6,9 @@ Introducing istio service mesh par Christian Posta & Burr Sutter
 Des labs demo:
 https://learn.openshift.com/servicemesh?extIdCarryOver=true&intcmp=7013a000002CtetAAC&sc_cid=701f2000001Css5AAC
 
+Autre liens:
+http://uncontained.io/articles/devops-reading-list/
+
 # Evolution services micro (Théorie)
 Low risk monolith to micro service process
 <pre>
@@ -162,7 +165,7 @@ Sidecar	: Proxies devant applications
 ## Création projet
 gateway -> partner -> catalog
 <pre>
-export OCP_TUTORIAL_PROJECT=user1-tutorial
+export OCP_TUTORIAL_PROJECT=cg-demo
 oc new-project $OCP_TUTORIAL_PROJECT
 git clone https://github.com/gpe-mw-training/ocp-service-mesh-foundations
 cd ocp-service-mesh-foundations
@@ -195,7 +198,7 @@ cat <<EOF > routing.yaml
 apiVersion: networking.istio.io/v1alpha3
 kind: Gateway
 metadata:
-  name: ingress-gateway
+  name: tutorial-gateway
 spec:
   selector:
     istio: ingressgateway # use istio default controller
@@ -215,7 +218,7 @@ spec:
   hosts:
   - '*'
   gateways:
-  - ingress-gateway
+  - tutorial-gateway
   http:
   - match:
     - uri:
@@ -228,8 +231,7 @@ spec:
 EOF
 oc apply -f routing.yaml -n $OCP_TUTORIAL_PROJECT
 
-# Vérifier accessibilité via istio
-export GATEWAY_URL=$(oc -n istio-system get route istio-ingressgateway -o jsonpath='{.spec.host}')
+$GATEWAY_URL=<route de l'application>
 curl $GATEWAY_URL
 </pre>
 
@@ -288,7 +290,6 @@ EOF
 oc create -f rule.yaml -n $OCP_TUTORIAL_PROJECT
 
 # Test ou meme curl sur la route de l'application
-curl $GATEWAY_URL
 # Toujours v2
 
 # ouvrir kiali pour voir les flux
@@ -309,11 +310,11 @@ spec:
     - destination:
         host: catalog
         subset: version-v1
-      weight: 80
+      weight: 75
     - destination:
         host: catalog
         subset: version-v2
-      weight: 20
+      weight: 25
 EOF
 oc apply -f canary.yaml -n $OCP_TUTORIAL_PROJECT
 
@@ -347,13 +348,9 @@ spec:
 EOF
 oc apply -f headers.yaml -n $OCP_TUTORIAL_PROJECT
 
+oc rsh partner-v1-77bd558948-nwl75
 while true
-do curl ${GATEWAY_URL}
-sleep .1
-done
-
-while true
-do curl -H'user-agent: Safari' catalog-user1-tutorial.apps.cluster-mpl-d015.mpl-d015.example.opentlc.com
+do curl -H'user-agent: Safari' catalog:8080
 sleep .1
 done
 </pre>
@@ -367,31 +364,28 @@ kind: VirtualService
 metadata:
   name: catalog
 spec:
-  gateways:
-  - ingress-gateway
   hosts:
     - catalog
   http:
-  - route:
-    - destination:
+    - mirror:
         host: catalog
         subset: version-v1
-      weight: 100
-    mirror:
-      host: catalog
-      subset: version-v2
-    mirror_percent: 100
+      route:
+        - destination:
+            host: catalog
+            subset: version-v2
 EOF
 oc apply -f mirror.yaml -n $OCP_TUTORIAL_PROJECT
 
 while true
-do curl ${GATEWAY_URL}
+do curl $GATEWAY_URL
 sleep .1
 done
 </pre>
 
 # Fault injection
 <pre>
+cat <<EOF > faut-injection.yaml
 apiVersion: networking.istio.io/v1alpha3
 kind: VirtualService
 metadata:
@@ -408,6 +402,13 @@ spec:
     - destination:
         host: catalog
         subset: version-v2
+EOF
+oc apply -f faut-injection.yaml -n $OCP_TUTORIAL_PROJECT
+
+while true
+do curl -H'user-agent: Safari' $GATEWAY_URL
+sleep .1
+done
 </pre>
 
 # Timeout
@@ -449,7 +450,7 @@ spec:
       perTryTimeout: 2s
 </pre>
 
-# Circuit breaker
+# Circuit breaker 
 Fails uand on depasse une requete en parallere http1MaxPendingRequests: 1, maxRequestsPerConnection: 1
 <pre>
 cat <<EOF > circuit-breaker.yaml
@@ -479,13 +480,15 @@ spec:
           interval: 1.000s
           maxEjectionPercent: 100
 EOF
-oc create -f circuit-breaker.yaml -n $OCP_TUTORIAL_PROJECT
+oc apply -f circuit-breaker.yaml -n $OCP_TUTORIAL_PROJECT
 
 siege -r 2 -c 20 -v <route du catalog>
+siege -r 10 -c 20 -v gateway-user1-tutorial.apps.cluster-mpl-1cd2.mpl-1cd2.example.opentlc.com
 </pre>
 
-# Pool ejection
+# Pool ejection (Example not tested)
 <pre>
+cat <<EOF > pool-ejection.yaml
 apiVersion: networking.istio.io/v1alpha3
 kind: DestinationRule
 metadata:
@@ -521,6 +524,8 @@ spec:
         consecutiveErrors: 1
         interval: 5.000s
         maxEjectionPercent: 100
+EOF
+oc apply -f pool-ejection.yaml -n $OCP_TUTORIAL_PROJECT
 </pre>
 
 # D'autre stratégies de redirection peuvent etre retrouvés dans la documentation officielle de istio
