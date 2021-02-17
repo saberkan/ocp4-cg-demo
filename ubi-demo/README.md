@@ -17,4 +17,5 @@ podman run -d -p 8080:80 rh/ubi-demo
 
 ## Verify
 curl localhost:8080
-Hello CAP
+
+> Hello CAP
